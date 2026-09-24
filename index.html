@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#e9e4da">
+<link rel="icon" href="data:,">
+<title>The Marble Computer</title>
+<style>
+  :root{color-scheme:light;--paper:#e9e4da;--ink:#20392f;--muted:#777b70;--line:#c7c5b8;--brass:#b78c49;--green:#315e49}
+  *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.4 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}button:focus-visible{outline:3px solid #568e75;outline-offset:4px}button:disabled{cursor:default;opacity:.48}
+  #app{height:100svh;min-height:720px;max-width:1400px;margin:auto;display:grid;grid-template-rows:auto minmax(300px,1fr) auto}
+  header{display:flex;justify-content:space-between;align-items:center;padding:25px 36px 7px;gap:20px}h1{font:normal clamp(25px,3.6vw,39px)/1.08 Georgia,"Times New Roman",serif;letter-spacing:-1.3px;margin:0 0 7px}header p{margin:0;color:var(--muted);font-size:12px}
+  .tools{display:flex;gap:6px}.tool{border:1px solid var(--line);background:transparent;border-radius:24px;padding:8px 12px;font-size:11px;white-space:nowrap}.tool[aria-pressed="true"]{background:#dce0d3;border-color:#a7b5a2}.tool:hover{background:#d5d9cb}
+  #stage{position:relative;min-height:0;isolation:isolate}canvas{width:100%;height:100%;display:block;touch-action:none;outline:none}
+  .stage-note{position:absolute;left:36px;bottom:14px;right:36px;display:flex;align-items:end;justify-content:space-between;gap:16px;pointer-events:none}.status{font-size:12px;max-width:65%;color:#445949}.status strong{display:block;font-weight:500;margin-bottom:4px}.status span{font-size:10px;color:var(--muted)}
+  .counter{text-align:right;font-size:10px;letter-spacing:1.2px;color:var(--muted);white-space:nowrap}.counter b{font:25px/1.2 "Courier New",monospace;letter-spacing:1px;color:var(--ink)}.counter small{font-size:11px;letter-spacing:0}
+  #desk{border-top:1px solid var(--line);margin:0 36px 20px;padding-top:17px;display:grid;grid-template-columns:1fr 115px 1fr;gap:26px;align-items:center}
+  .label{font-size:9px;letter-spacing:2px;font-weight:600;color:var(--muted);margin-bottom:10px}.input-grid{display:grid;grid-template-columns:20px repeat(4,43px) 35px;gap:6px;align-items:center;width:max-content}.weights{text-align:center;font:10px "Courier New",monospace;color:var(--muted)}
+  .bank{font:italic 21px Georgia,serif}.input-value{font:17px "Courier New",monospace;text-align:right}.bit-switch{position:relative;width:43px;height:33px;border:1px solid #bbb9a9;border-radius:5px;background:linear-gradient(#c9c8ba,#e1dfd2);box-shadow:inset 0 2px 4px #0002;display:flex;align-items:center;justify-content:space-between;padding:0 6px;font:10px "Courier New",monospace;color:#888a7c}
+  .bit-switch:after{content:"";position:absolute;left:3px;top:3px;width:17px;height:25px;background:linear-gradient(100deg,#f9f4e8,#ccc5af);border:1px solid #b6ad92;border-radius:3px;box-shadow:1px 2px 3px #0003;transition:transform .18s}.bit-switch[aria-pressed="true"]{background:#526b50;color:#f8f0d9;border-color:#6b7b59}.bit-switch[aria-pressed="true"]:after{transform:translateX(18px);background:linear-gradient(100deg,#e9c77b,#ad843e)}
+  .small-note{font-size:10px;color:var(--muted);margin-top:10px}.actions{text-align:center;align-self:center}.run{position:relative;width:83px;height:78px;border:1px solid #b3a78d;border-radius:9px;background:linear-gradient(110deg,#dfd6be,#c1b592);box-shadow:inset 0 1px #fff8,0 3px 7px #544c2520;padding-top:51px;font-size:10px;font-weight:700;letter-spacing:2px}
+  .run:before{content:"";position:absolute;left:35px;top:14px;width:12px;height:32px;border-radius:8px;background:linear-gradient(90deg,#6d6247,#b8a876,#68553a);box-shadow:inset 0 2px 4px #0008}.run:after{content:"";position:absolute;width:23px;height:23px;left:29px;top:9px;background:radial-gradient(circle at 33% 25%,#826243,#45331e 70%);border:2px solid #af8a4b;border-radius:50%;box-shadow:0 3px 4px #0005;transition:transform .25s}.run:active:after,.run.running:after{transform:translateY(16px)}
+  .reset{display:block;margin:6px auto 0;font-size:10px;border:0;background:transparent;padding:4px 8px;text-decoration:underline;text-underline-offset:3px}.register{justify-self:end}.register-bits{display:flex;gap:6px}.result-bit{width:42px;text-align:center}.digit{display:block;padding:4px 0;font:29px/1.2 "Courier New",monospace;border:1px solid #bab9a7;border-radius:4px;background:#dbddce;color:#87917c;box-shadow:inset 0 2px 4px #47552b12;transition:background .16s,color .16s}.result-bit[data-on="true"] .digit{background:#365841;color:#f4df9d;border-color:#527459}.result-bit small{font:9px "Courier New",monospace;color:var(--muted)}
+  .readout{margin-top:9px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;font:15px "Courier New",monospace}.readout b{font-size:25px;font-weight:400}.readout sub{font-size:9px}.readout span:last-child{font:10px system-ui;color:var(--muted)}
+  .bottom{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #cdcbbf;margin-top:3px;padding-top:12px;gap:16px}.demo{border:0;border-radius:5px;background:var(--ink);color:#f0ebdf;padding:9px 14px;font-size:11px;letter-spacing:.3px}.demo:hover{background:#3d5b45}.demo:before{content:"▶";font-size:9px;margin-right:9px}.demo[aria-pressed="true"]:before{content:"■"}.bottom p{font-size:10px;margin:0;color:var(--muted);text-align:right}.bottom em{font-style:normal;color:#3e5c48}
+  #notice{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:30px;text-align:center;color:#57634f;background:var(--paper);z-index:3;font-size:13px}#notice[hidden]{display:none}
+  @media(min-width:1200px){#desk{margin-left:auto;margin-right:auto;width:960px}header{padding-left:55px;padding-right:55px}.stage-note{left:55px;right:55px}}
+  @media(max-width:700px){#app{min-height:780px;grid-template-rows:auto minmax(370px,1fr) auto}header{padding:20px 18px 2px;align-items:start;gap:10px}h1{font-size:27px;letter-spacing:-1px}header p{font-size:10px;max-width:220px}.tools{flex-direction:column;gap:5px}.tool{font-size:9px;padding:5px 9px}.stage-note{left:18px;right:18px;bottom:8px}.status{font-size:10px;max-width:70%}.status span{font-size:9px}.counter b{font-size:21px}.counter{font-size:8px}#desk{margin:0 18px 15px;grid-template-columns:1fr 83px;gap:12px;padding-top:12px}.input-grid{grid-template-columns:17px repeat(4,36px) 28px;gap:4px}.bit-switch{width:36px;height:30px;padding:0 5px}.bit-switch:after{height:22px;width:14px}.bit-switch[aria-pressed="true"]:after{transform:translateX(14px)}.label{font-size:8px;margin-bottom:7px}.small-note{font-size:9px;margin-top:7px}.register{grid-column:1/-1;justify-self:stretch;display:grid;grid-template-columns:auto 1fr;column-gap:17px;align-items:center;border-top:1px solid var(--line);padding-top:10px}.register .label{grid-column:1/-1}.result-bit{width:34px}.register-bits{gap:4px}.digit{font-size:23px;padding:1px}.readout{flex-direction:column;gap:0;margin-top:0;font-size:11px}.readout b{font-size:22px}.readout span:last-child{font-size:8px}.bottom{padding-top:10px;margin:0;gap:12px}.bottom p{font-size:9px;max-width:185px}.demo{white-space:nowrap;padding:9px 11px;font-size:10px}}
+  @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<main id="app">
+  <header><div><h1>The marble computer</h1><p>Brass, glass, and a little gravity. An entirely mechanical addition.</p></div><div class="tools"><button class="tool" id="sound" aria-pressed="true">Sound on</button><button class="tool" id="camera" aria-pressed="true">Follow camera</button></div></header>
+  <section id="stage" aria-label="Interactive three-dimensional marble adding machine">
+    <canvas id="view" tabindex="0" aria-label="Marble machine. Drag to orbit, scroll to zoom. Input switches and RUN also work on the board."></canvas>
+    <div id="notice" role="status">Preparing the workshop…</div>
+    <div class="stage-note"><div class="status"><strong id="status" aria-live="polite">Set the switches. Pull the lever.</strong><span id="detail">0 → 1 keeps the bit · 1 → 0 carries left</span></div><div class="counter"><b id="count">00</b><small id="count-total"> / 04</small><br>MARBLES FALLEN</div></div>
+  </section>
+  <section id="desk" aria-label="Machine controls">
+    <div class="inputs"><div class="label">SET THE INPUTS</div><div class="input-grid" id="inputs"></div><div class="small-note">Each selected switch releases one marble at its bit.</div></div>
+    <div class="actions"><button id="run" class="run" aria-label="RUN: add the selected inputs" disabled>RUN</button><button id="reset" class="reset" disabled>Reset</button></div>
+    <div class="register"><div class="label">THE FIVE TOGGLES · MOST SIGNIFICANT FIRST</div><div class="register-bits" id="bits"></div><output class="readout" id="readout" aria-live="polite"><span><span id="binary">00000</span><sub>2</sub> = <b id="decimal">0</b></span><span id="read-note">Register at rest</span></output></div>
+    <div class="bottom"><button id="demo" class="demo" aria-pressed="false" disabled>DEMO</button><p id="demo-note">5 + 6 &nbsp; / &nbsp; 9 + 7 &nbsp; / &nbsp; 15 + 15<br><em>Inspired by Wintergatan &amp; the Digi-Comp II.</em></p></div>
+  </section>
+</main>
+<noscript>This mechanical computer needs JavaScript and a browser with WebGL 2.</noscript>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const $ = id => document.getElementById(id);
+const weights = [1,2,4,8,16];
+const input = [[true,false,true,false],[false,true,true,false]];
+const switches = [[],[]], bitViews = [];
+let ready = false, muted = false, audio = null;
+let windowChangeInput=()=>{};
+const blank = document.createElement('span'); $('inputs').append(blank);
+for (const w of [8,4,2,1]) { const e=document.createElement('span');e.className='weights';e.textContent=w;$('inputs').append(e); }
+$('inputs').append(document.createElement('span'));
+for(let bank=0;bank<2;bank++){
+  const label=document.createElement('span');label.className='bank';label.textContent=bank?'B':'A';$('inputs').append(label);
+  for(let bit=3;bit>=0;bit--){
+    const b=document.createElement('button');b.className='bit-switch';b.innerHTML='<span>0</span><span>1</span>';
+    b.setAttribute('aria-label',`${bank?'B':'A'}, weight ${weights[bit]}`);b.setAttribute('aria-pressed',input[bank][bit]);b.disabled=true;
+    b.addEventListener('click',()=>changeInput(bank,bit));switches[bank][bit]=b;$('inputs').append(b);
+  }
+  const value=document.createElement('output');value.id=bank?'value-b':'value-a';value.className='input-value';$('inputs').append(value);
+}
+for(let bit=4;bit>=0;bit--){const e=document.createElement('div');e.className='result-bit';e.dataset.on='false';e.innerHTML=`<span class="digit">0</span><small>${weights[bit]}</small>`;e.setAttribute('aria-label',`Weight ${weights[bit]}: 0`);$('bits').append(e);bitViews[bit]=e;}
+
+// Audio is constructed only in response to the first real click, never at load.
+function unlockAudio(){
+  if(!audio){const Context=window.AudioContext||window.webkitAudioContext;if(Context){try{audio=new Context();}catch{}}}
+  if(audio?.state==='suspended')audio.resume().catch(()=>{});
+}
+document.addEventListener('click',unlockAudio,{capture:true});
+function tick(bit,soft=false){
+  if(muted||!audio||audio.state!=='running')return;
+  const t=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();o.type='triangle';
+  o.frequency.setValueAtTime(1800+bit*170,t);o.frequency.exponentialRampToValueAtTime(390,t+.032);
+  g.gain.setValueAtTime(soft?.018:.07,t);g.gain.exponentialRampToValueAtTime(.0001,t+.045);
+  o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+.05);o.onended=()=>{o.disconnect();g.disconnect();};
+}
+$('sound').onclick=()=>{muted=!muted;$('sound').setAttribute('aria-pressed',!muted);$('sound').textContent=muted?'Sound off':'Sound on';};
+
+/* MECHANISM START
+   There is no A+B operation, result lookup, or precomputed answer.
+   A selected input releases ONE marble into the corresponding weighted stage.
+   Only arrive() can change a bit. It is called by a marble reaching a track end.
+   Reset also uses real marbles: pulse the lowest occupied stage until overflow.
+   This clears the register without assigning zero to an existing toggle.
+*/
+class Rail {
+  constructor(segments){
+    this.points=[];this.lengths=[0];this.length=0;
+    for(const segment of segments){for(let j=this.points.length?1:0;j<=28;j++){
+      const t=j/28,u=1-t,[a,b,c,d]=segment;
+      const p=a.map((v,k)=>u*u*u*v+3*u*u*t*b[k]+3*u*t*t*c[k]+t*t*t*d[k]);
+      if(this.points.length){const q=this.points[this.points.length-1];this.length+=Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2]);this.lengths.push(this.length);}
+      this.points.push(p);
+    }}
+  }
+  sample(s,out){
+    let lo=0,hi=this.points.length-1;
+    while(lo+1<hi){const m=(lo+hi)>>1;if(this.lengths[m]<s)lo=m;else hi=m;}
+    const a=this.points[lo],b=this.points[hi],length=this.lengths[hi]-this.lengths[lo];
+    const t=Math.max(0,Math.min(1,(s-this.lengths[lo])/length));
+    for(let k=0;k<3;k++)out[k]=a[k]+(b[k]-a[k])*t;
+    return (b[1]-a[1])/length;
+  }
+}
+const Z=.84, gatePositions=Array.from({length:5},(_,i)=>[4.3-i*2.15,.9-i*.72,Z]);
+const feedRails={}, carryRails=[], drainRails=[];
+const rail=(...s)=>new Rail(s);
+const P=(x,y,z=Z)=>[x,y,z];
+for(let i=0;i<5;i++){
+  const [x,y]=gatePositions[i],hit=P(x,y+.20);
+  for(const bank of ['A','B','R']){
+    if(i===4&&bank!=='R')continue;
+    const sx=x+(bank==='A'?-.28:bank==='B'?.28:-.64),sy=bank==='A'?4.18:bank==='B'?2.92:y+1.04;
+    const start=P(sx,sy),join=P(x,y+.58);
+    feedRails[bank+i]=rail([start,P(sx,sy-.35),P(sx,y+.79),join],[join,P(x,y+.47),P(x,y+.32),hit]);
+  }
+  const left=P(x-.52,y-.21),right=P(x+.55,y-.22);
+  const leftFork=[hit,P(x-.04,y+.10),P(x-.28,y-.16),left];
+  if(i<4){const [nx,ny]=gatePositions[i+1];carryRails[i]=rail(leftFork,[left,P(x-.98,y-.28),P(nx+.45,ny+.44),P(nx,ny+.20)]);}
+  else carryRails[i]=rail(leftFork,[left,P(x-.85,y-.48),P(-5.32,-4.3),P(-5.25,-4.78)],[P(-5.25,-4.78),P(-5.2,-5.10),P(-5.05,-5.40,.80),P(-5.05,-5.69,.80)]);
+  drainRails[i]=rail([hit,P(x+.04,y+.09),P(x+.26,y-.18),right],[right,P(x+.85,y-.57),P(x+.74,-3.94),P(x+.56,-4.76)],[P(x+.56,-4.76),P(x+.52,-5.10),P(x+.43,-5.40,.80),P(x+.43,-5.69,.80)]);
+}
+class MarbleComputer {
+  constructor(hooks){this.bits=[false,false,false,false,false];this.hooks=hooks;this.active=null;this.queue=[];this.mode='idle';this.gap=0;this.dropped=0;this.cleared=0;this.fallen=0;this.position=[0,0,0];this.clearOnly=false;}
+  get busy(){return this.mode!=='idle';}
+  begin(queue,clearOnly=false){
+    if(this.busy)return;this.queue=queue.slice();this.clearOnly=clearOnly;this.dropped=0;this.cleared=0;this.fallen=0;this.gap=.35;
+    this.mode=this.bits.some(Boolean)?'clearing':clearOnly?'clearing':'feeding';this.hooks.mode(this.mode);
+  }
+  release(key,clearing){
+    const bit=Number(key.slice(1));this.active={key,clearing,bit,rail:feedRails[key],s:0,v:.15,target:bit};
+    this.fallen++;if(clearing)this.cleared++;else this.dropped++;
+    this.active.rail.sample(0,this.position);this.hooks.release(this.active,this.position);
+  }
+  arrive(){
+    const a=this.active,bit=a.target,carry=this.bits[bit];
+    this.bits[bit]=!carry; // The ONLY assignment to any running register bit.
+    this.hooks.flip(bit,this.bits[bit],a.clearing);
+    a.rail=carry?carryRails[bit]:drainRails[bit];a.s=0;a.v=Math.max(.7,a.v*.48);
+    a.target=carry&&bit<4?bit+1:null;
+  }
+  step(dt){
+    if(!this.busy)return;
+    if(this.active){
+      const a=this.active,slope=a.rail.sample(a.s,this.position);
+      // A rolling sphere: gravity along the tangent, rotational inertia, drag.
+      a.v=Math.max(.12,Math.min(5.8,a.v+(-9.81*slope*5/7-.035-a.v*a.v*.018)*dt));
+      a.s=Math.min(a.rail.length,a.s+a.v*dt);a.rail.sample(a.s,this.position);this.hooks.move(this.position,a.v,dt);
+      if(a.s>=a.rail.length){
+        if(a.target!==null)this.arrive();
+        else{a.v=0;this.hooks.collect(a);this.active=null;this.gap=.19;}
+      }
+      return;
+    }
+    this.gap-=dt;if(this.gap>0)return;
+    if(this.mode==='clearing'){
+      const bit=this.bits.findIndex(Boolean);
+      if(bit>=0){this.release('R'+bit,true);return;}
+      if(this.clearOnly){this.finish();return;}
+      this.mode='feeding';this.hooks.mode(this.mode);this.gap=.4;return;
+    }
+    if(this.queue.length)this.release(this.queue.shift(),false);else this.finish();
+  }
+  finish(){this.mode='idle';this.hooks.done(this.clearOnly);}
+  read(){const binary=this.bits.slice().reverse().map(b=>b?'1':'0').join('');return {binary,decimal:parseInt(binary,2)};}
+}
+/* MECHANISM END */
+
+let renderer;
+try {renderer=new THREE.WebGLRenderer({canvas:$('view'),antialias:true,alpha:false,powerPreference:'high-performance'});}
+catch { $('notice').textContent='This workshop needs WebGL 2. Open the file in a current browser with hardware acceleration enabled.'; }
+if(renderer) startWorkshop();
+function startWorkshop(){
+  const scene=new THREE.Scene();scene.background=new THREE.Color('#e9e4da');scene.fog=new THREE.Fog('#e9e4da',36,75);
+  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate=false;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
+  const camera=new THREE.PerspectiveCamera(33,1,.1,100);camera.position.set(3.1,2.7,25);
+  const controls=new OrbitControls(camera,$('view'));controls.enableDamping=true;controls.dampingFactor=.065;controls.enablePan=false;
+  controls.minAzimuthAngle=-.55;controls.maxAzimuthAngle=.55;controls.minPolarAngle=1.03;controls.maxPolarAngle=1.79;controls.minDistance=16;controls.maxDistance=44;controls.target.set(0,-.2,.35);
+  let following=!matchMedia('(prefers-reduced-motion: reduce)').matches,fitDistance=25;
+  const setFollow=v=>{following=v;$('camera').setAttribute('aria-pressed',v);$('camera').textContent=v?'Follow camera':'Free camera';};setFollow(following);
+  $('camera').onclick=()=>setFollow(!following);
+  const hemisphere=new THREE.HemisphereLight(0xfff5de,0x686b53,2.4);scene.add(hemisphere);
+  const key=new THREE.DirectionalLight(0xffe6be,3.25);key.position.set(-7,10,10);key.castShadow=true;key.shadow.mapSize.set(1024,1024);
+  Object.assign(key.shadow.camera,{left:-10,right:10,top:10,bottom:-10,near:.5,far:40});key.shadow.normalBias=.035;key.shadow.bias=-.0002;key.shadow.radius=4;scene.add(key);
+  const fill=new THREE.DirectionalLight(0xd9edeb,1.15);fill.position.set(7,2,5);scene.add(fill);
+  // A procedural studio environment, including the softboxes reflected in glass.
+  const faces=[];
+  for(let i=0;i<6;i++){const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d'),gr=g.createLinearGradient(0,0,0,128);gr.addColorStop(0,'#f7f1e0');gr.addColorStop(.5,'#aea18a');gr.addColorStop(1,'#3e493f');g.fillStyle=gr;g.fillRect(0,0,128,128);g.fillStyle=i===2?'#ffffff':'#fff3d4';g.fillRect(15,12,i%2?16:55,70);faces.push(c);}
+  const cube=new THREE.CubeTexture(faces);cube.needsUpdate=true;cube.colorSpace=THREE.SRGBColorSpace;
+  const pmrem=new THREE.PMREMGenerator(renderer),environment=pmrem.fromCubemap(cube);scene.environment=environment.texture;pmrem.dispose();cube.dispose();
+  function woodTexture(){
+    const c=document.createElement('canvas');c.width=512;c.height=1024;const g=c.getContext('2d');g.fillStyle='#865d38';g.fillRect(0,0,512,1024);
+    let seed=13;const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+    for(let n=0;n<1100;n++){const x=random()*512;g.beginPath();g.moveTo(x,-5);for(let y=0;y<1035;y+=18)g.lineTo(x+Math.sin(y*.009+x*.06)*3+Math.sin(y*.028+x)*.7,y);g.lineWidth=random()*1.4+.2;g.strokeStyle=`rgba(${random()>.55?'50,32,18':'177,137,82'},${random()*.07+.012})`;g.stroke();}
+    for(let x=100;x<512;x+=103){g.fillStyle='#301c0c24';g.fillRect(x,0,1.1,1024);g.fillStyle='#efcc9a20';g.fillRect(x+1,0,1,1024);}
+    const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return t;
+  }
+  const wood=new THREE.MeshStandardMaterial({map:woodTexture(),roughness:.64});
+  const walnut=new THREE.MeshStandardMaterial({color:0x392b1e,roughness:.57});
+  const brass=new THREE.MeshStandardMaterial({color:0xc99b50,metalness:.82,roughness:.29});
+  const darkBrass=new THREE.MeshStandardMaterial({color:0x77542a,metalness:.73,roughness:.4});
+  const railMat=new THREE.MeshStandardMaterial({color:0xdbbc7c,metalness:.82,roughness:.25});
+  const enamel=new THREE.MeshStandardMaterial({color:0x183d32,roughness:.45,metalness:.15});
+  const dark=new THREE.MeshStandardMaterial({color:0x16241e,roughness:.65});
+  const ivory=new THREE.MeshStandardMaterial({color:0xe7dec7,roughness:.55});
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0xe4dfd4,roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-6.3;scene.add(floor);
+  const shadowCanvas=document.createElement('canvas');shadowCanvas.width=shadowCanvas.height=128;const sg=shadowCanvas.getContext('2d'),gradient=sg.createRadialGradient(64,64,4,64,64,62);gradient.addColorStop(0,'#30261985');gradient.addColorStop(1,'#30261900');sg.fillStyle=gradient;sg.fillRect(0,0,128,128);
+  const contactShadow=new THREE.Mesh(new THREE.PlaneGeometry(16,6),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(shadowCanvas),transparent:true,depthWrite:false}));contactShadow.rotation.x=-Math.PI/2;contactShadow.position.set(0,-6.28,.1);scene.add(contactShadow);
+  // Static hardware is batched by material, keeping draw calls low.
+  const batches=new Map(),tmp=new THREE.Object3D();
+  function solid(geo,mat,pos,rotation=[0,0,0]){tmp.position.set(...pos);tmp.rotation.set(...rotation);tmp.scale.set(1,1,1);tmp.updateMatrix();const g=geo.index?geo.toNonIndexed():geo.clone();g.applyMatrix4(tmp.matrix);if(!batches.has(mat))batches.set(mat,[]);batches.get(mat).push(g);geo.dispose();}
+  const box=(w,h,d,mat,x,y,z)=>solid(new THREE.BoxGeometry(w,h,d),mat,[x,y,z]);
+  const cylinder=(r,h,mat,x,y,z)=>solid(new THREE.CylinderGeometry(r,r,h,20),mat,[x,y,z],[Math.PI/2,0,0]);
+  const rod=(a,b,r,mat)=>{const av=new THREE.Vector3(...a),bv=new THREE.Vector3(...b),m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,av.distanceTo(bv),8),mat);m.position.copy(av).add(bv).multiplyScalar(.5);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),bv.sub(av).normalize());m.updateMatrix();const g=m.geometry.toNonIndexed();g.applyMatrix4(m.matrix);if(!batches.has(mat))batches.set(mat,[]);batches.get(mat).push(g);m.geometry.dispose();};
+  function textTexture(text,color='#ead9b1',background=null,font='bold 34px Georgia',w=512,h=128){const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');if(background){g.fillStyle=background;g.fillRect(0,0,w,h);}g.fillStyle=color;g.font=font;const size=Number(font.match(/([\d.]+)px/)[1]),factor=Math.min(w*.9/Math.max(1,g.measureText(text).width),h*.74/size);g.font=font.replace(/[\d.]+px/,`${size*factor}px`);g.textAlign='center';g.textBaseline='middle';g.fillText(text,w/2,h/2);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;}
+  function label(text,x,y,w=.8,h=.26,color='#ead9b1',font='bold 34px Georgia',z=.465){const map=textTexture(text,color,null,font,Math.round(128*w/h),128);const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false,toneMapped:false}));m.position.set(x,y,z);scene.add(m);return m;}
+  function screw(x,y,z=.44){cylinder(.071,.06,brass,x,y,z);box(.085,.013,.008,darkBrass,x,y,z+.035);}
+  box(12.1,11.8,.58,walnut,0,0,-.08);box(11.72,11.44,.12,wood,0,0,.26);
+  for(const x of [-5.87,5.87])box(.13,11.5,.18,darkBrass,x,0,.3);
+  for(const y of [-5.65,5.65])box(11.68,.11,.15,darkBrass,0,y,.31);
+  for(const x of [-5.57,5.57])for(const y of [-5.38,5.38])screw(x,y);
+  for(const x of [-4.4,4.4]){box(.45,.8,1.5,walnut,x,-5.9,-.3);box(1.5,.20,2.0,enamel,x,-6.13,0);}
+  box(2.10,1.11,.10,enamel,-4.30,4.45,.38);label('THE MARBLE',-4.30,4.64,1.94,.30);label('COMPUTER',-4.30,4.30,1.94,.35);label('GRAVITY / BINARY',-4.30,4.02,1.65,.16,'#bfa777','24px monospace');
+  for(let i=0;i<4;i++)label(String(weights[i]),gatePositions[i][0],5.14,.4,.30,'#3e2b19','bold 40px monospace');
+  label('A',-3.03,4.15,.30,.32,'#3e2b19');label('B',-3.03,2.90,.30,.32,'#3e2b19');
+  box(1.58,.78,.12,enamel,-4.5,1.99,.39);label('DROPPED',-4.5,2.51,1.48,.18,'#3e2b19','28px monospace');
+  const counterLabel=label('00',-4.5,1.99,1.15,.45,'#eee2b7','48px monospace',.47);
+  label('CARRY  ←',-4.47,.68,1.35,.24,'#3e2b19','28px monospace');
+  // The enclosed drawer receives every spent and overflow marble.
+  box(11.14,1.0,.10,walnut,0,-5.45,.38);box(11.14,.10,1.02,walnut,0,-5.90,.82);
+  for(const x of [-5.57,5.57])box(.10,1.0,1.02,walnut,x,-5.45,.82);
+  box(11.14,.86,.12,walnut,0,-5.50,1.26);box(11.18,.075,.14,brass,0,-5.03,1.26);
+  box(10.90,.74,.07,enamel,0,-5.50,1.35);label('C O L L E C T O R',0,-5.50,2.9,.27,'#c6b78d','28px monospace',1.40);
+  box(.6,.10,.13,brass,-4.6,-5.50,1.45);box(.6,.10,.13,brass,4.6,-5.50,1.45);
+  function drawRail(r,skip=0){
+    const pts=r.points.slice(skip).map(p=>new THREE.Vector3(...p));if(pts.length<2)return;
+    for(const side of [-1,1]){const off=pts.map((p,j)=>{const a=pts[Math.max(0,j-1)],b=pts[Math.min(pts.length-1,j+1)];const dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy)||1;return new THREE.Vector3(p.x-dy/l*.115*side,p.y+dx/l*.115*side,p.z-.115);});solid(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(off),Math.max(16,off.length),.024,6,false),railMat,[0,0,0]);}
+    for(let j=10;j<pts.length-6;j+=22){const p=pts[j];rod([p.x,p.y,.34],[p.x,p.y,p.z-.14],.037,darkBrass);}
+  }
+  Object.values(feedRails).forEach(r=>drawRail(r));carryRails.forEach(r=>drawRail(r));drainRails.forEach(r=>drawRail(r));
+  const marGeo=new THREE.SphereGeometry(.151,20,14),coreGeo=new THREE.SphereGeometry(.070,12,8);
+  const glass=new THREE.MeshPhysicalMaterial({color:0xf4fbf3,metalness:0,roughness:.07,transmission:.92,thickness:.42,ior:1.5,clearcoat:1,envMapIntensity:1.3});
+  const coreMats={A:new THREE.MeshStandardMaterial({color:0xc48824,metalness:.3,roughness:.24}),B:new THREE.MeshStandardMaterial({color:0x367d87,metalness:.25,roughness:.2}),R:new THREE.MeshStandardMaterial({color:0x89908a,metalness:.5,roughness:.25})};
+  function marble(bank){const g=new THREE.Group(),shell=new THREE.Mesh(marGeo,glass),core=new THREE.Mesh(coreGeo,coreMats[bank]);core.scale.set(.62,1.43,.85);core.rotation.z=.7;shell.castShadow=true;g.add(shell,core);scene.add(g);return g;}
+  const sources={},targets=[],reloads=[],gateViews=[];
+  for(const [name,r] of Object.entries(feedRails)){
+    const [x,y,z]=r.points[0],bank=name[0],m=marble(bank);m.position.set(x,y,z);
+    // Open-bottom magazines: replenishing balls descend from behind the hood.
+    box(.43,.56,.055,enamel,x,y+.46,1.05);box(.43,.56,.055,enamel,x,y+.46,.59);
+    for(const dx of [-.21,.21])box(.035,.56,.46,enamel,x+dx,y+.46,.82);
+    box(.48,.075,.51,brass,x,y+.74,.82);box(.45,.035,.04,brass,x,y+.19,1.05);
+    for(const dx of [-.21,.21])rod([x+dx,y-.08,.72],[x+dx,y+.22,.72],.023,brass);
+    const lever=new THREE.Mesh(new THREE.BoxGeometry(.38,.055,.14),brass);lever.position.set(x,y-.11,.94);scene.add(lever);
+    let switchView=null;
+    if(bank!=='R'){
+      const bit=Number(name.slice(1));switchView=new THREE.Mesh(new THREE.SphereGeometry(.086,12,8),input[bank==='A'?0:1][bit]?brass:darkBrass);switchView.position.set(x+.36,y+.44,1.04);scene.add(switchView);
+      const hitbox=new THREE.Mesh(new THREE.BoxGeometry(.95,.95,.7),new THREE.MeshBasicMaterial({visible:false}));hitbox.position.set(x,y+.3,.86);hitbox.userData.action=()=>changeInput(bank==='A'?0:1,bit);scene.add(hitbox);targets.push(hitbox);
+    }else label('R',x,y+.83,.24,.16,'#3e2b19','28px monospace');
+    sources[name]={marble:m,lever,position:[x,y,z],switchView,opened:0};
+  }
+  const digitMaps=[textTexture('0','#e4d4a9','#1c352b','bold 94px monospace',128,128),textTexture('1','#fff0b8','#345c3e','bold 94px monospace',128,128)];
+  for(let i=0;i<5;i++){
+    const [x,y]=gatePositions[i];
+    cylinder(.57,.11,darkBrass,x,y-.16,.43);cylinder(.49,.13,brass,x,y-.16,.49);cylinder(.41,.14,enamel,x,y-.16,.51);
+    const pivot=new THREE.Group();pivot.position.set(x,y-.17,.80);scene.add(pivot);
+    const shape=new THREE.Shape();shape.moveTo(-.09,-.16);shape.lineTo(-.12,.09);shape.quadraticCurveTo(-.38,.24,-.38,.47);shape.lineTo(-.22,.48);shape.quadraticCurveTo(-.16,.24,.02,.19);shape.quadraticCurveTo(.16,.24,.22,.48);shape.lineTo(.38,.47);shape.quadraticCurveTo(.38,.24,.12,.09);shape.lineTo(.09,-.16);shape.closePath();
+    const paddle=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:.075,bevelEnabled:true,bevelSegments:1,steps:1,bevelSize:.025,bevelThickness:.025}),brass);paddle.castShadow=true;pivot.add(paddle);pivot.rotation.z=-.46;
+    cylinder(.082,.17,brass,x,y-.17,.91);
+    for(const dx of [-.39,.39])screw(x+dx,y-.45,.64);
+    const numeral=new THREE.Mesh(new THREE.PlaneGeometry(.39,.39),new THREE.MeshBasicMaterial({map:digitMaps[0],toneMapped:false}));numeral.position.set(x,y-.83,.405);scene.add(numeral);
+    label(String(weights[i]),x,y-1.20,.5,.22,'#3e2b19','bold 34px monospace');
+    gateViews.push({pivot,numeral,from:-.46,to:-.46,t:1});
+  }
+  // A physical RUN lever can be clicked, as well as the keyboard-accessible one.
+  box(.52,1.27,.14,enamel,5.27,-3.30,.43);cylinder(.19,.2,brass,5.27,-3.36,.64);
+  const runLever=new THREE.Group();runLever.position.set(5.27,-3.36,.77);scene.add(runLever);
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.048,.048,.68,12),brass);shaft.position.y=.26;runLever.add(shaft);
+  const knob=new THREE.Mesh(new THREE.SphereGeometry(.17,20,12),walnut);knob.position.y=.64;runLever.add(knob);runLever.rotation.z=-.20;
+  label('RUN',5.27,-4.20,.60,.22,'#3e2b19','bold 30px monospace');
+  const leverTarget=new THREE.Mesh(new THREE.BoxGeometry(.8,1.5,.8),new THREE.MeshBasicMaterial({visible:false}));leverTarget.position.set(5.27,-3.2,.85);leverTarget.userData.action=()=>startRun();scene.add(leverTarget);targets.push(leverTarget);
+  for(const [mat,list] of batches){const attributes={position:[],normal:[],uv:[]};for(const g of list)for(const n of Object.keys(attributes))attributes[n].push(...g.getAttribute(n).array);const geo=new THREE.BufferGeometry();for(const [n,data] of Object.entries(attributes))geo.setAttribute(n,new THREE.Float32BufferAttribute(data,n==='uv'?2:3));const mesh=new THREE.Mesh(geo,mat);mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);for(const g of list)g.dispose();}batches.clear();
+  let activeMesh=null,lastCounter='',total=0,demoOn=false,demoIndex=0,hold=0,time=0;
+  const demos=[['0101','0110'],['1001','0111'],['1111','1111']];
+  function controlsState(){const lock=machine.busy||demoOn;for(const row of switches)for(const b of row)b.disabled=lock;$('run').disabled=lock;$('reset').disabled=lock;$('demo').disabled=machine.busy&&!demoOn;$('run').classList.toggle('running',machine.busy);}
+  function result(){const value=machine.read();$('binary').textContent=value.binary;$('decimal').textContent=value.decimal;$('read-note').textContent='Read from the resting toggles';}
+  function setStatus(main,detail){$('status').textContent=main;if(detail)$('detail').textContent=detail;}
+  const machine=new MarbleComputer({
+    mode(mode){document.body.dataset.phase=mode;$('binary').textContent='·····';$('decimal').textContent='—';$('read-note').textContent='Waiting for the last marble';setStatus(mode==='clearing'?'Reset marbles are clearing the register.':demoOn?`Demonstration ${demoIndex+1} of 3`:'Gravity is doing the addition.',mode==='clearing'?'A grey marble enters the lowest occupied bit and carries to overflow.':'Watch the marble. Every brass click changes one bit.');controlsState();},
+    release(a){
+      const source=sources[a.key];activeMesh=source.marble;source.opened=1;
+      const replacement=marble(a.key[0]);replacement.position.set(source.position[0],source.position[1]+.45,source.position[2]);source.marble=replacement;reloads.push({mesh:replacement,y:source.position[1],v:0,wait:.15});
+      $('count').textContent=String(machine.fallen).padStart(2,'0');$('count-total').textContent=machine.cleared?' incl. reset':' / '+String(total).padStart(2,'0');
+      if(a.clearing)$('detail').textContent=`Reset marble ${machine.cleared} · following the carry rails to zero.`;
+      renderer.shadowMap.needsUpdate=true;
+    },
+    move(p,v,dt){if(activeMesh){activeMesh.position.set(...p);activeMesh.rotation.x+=v*dt/.151;activeMesh.rotation.z+=v*dt*.5;}},
+    flip(bit,value,clearing){const view=gateViews[bit];view.from=view.pivot.rotation.z;view.to=value?.46:-.46;view.t=0;view.numeral.material.map=digitMaps[value?1:0];const e=bitViews[bit];e.dataset.on=String(value);e.querySelector('.digit').textContent=value?'1':'0';e.setAttribute('aria-label',`Weight ${weights[bit]}: ${value?1:0}`);tick(bit,clearing);if(!clearing)$('detail').textContent=value?`Bit ${weights[bit]}: 0 → 1. Marble goes to the collector.`:`Bit ${weights[bit]}: 1 → 0. The same marble carries left.`;},
+    collect(){if(activeMesh){scene.remove(activeMesh);activeMesh=null;}}, // Fully stopped inside the opaque collector drawer.
+    done(clearOnly){document.body.dataset.phase='idle';result();controlsState();setStatus(clearOnly?'The register is clear.':demoOn?`Demonstration ${demoIndex+1} of 3 · settled`:'Every marble has settled.','0 → 1 keeps the bit · 1 → 0 carries left');if(demoOn)hold=2.7;}
+  });
+  // Bindings expose controls, never a numeric answer or an arithmetic shortcut.
+  windowChangeInput=(bank,bit)=>{if(machine.busy||demoOn)return;input[bank][bit]=!input[bank][bit];updateInputs();tick(bit,true);};
+  function updateInputs(){
+    for(let bank=0;bank<2;bank++){
+      const binary=input[bank].slice().reverse().map(v=>v?'1':'0').join('');$(bank?'value-b':'value-a').textContent=String(parseInt(binary,2)).padStart(2,'0');
+      for(let bit=0;bit<4;bit++){const on=input[bank][bit];switches[bank][bit].setAttribute('aria-pressed',on);sources[(bank?'B':'A')+bit].switchView.material=on?brass:darkBrass;}
+    }
+    total=input.flat().filter(Boolean).length;$('count-total').textContent=' / '+String(total).padStart(2,'0');renderer.shadowMap.needsUpdate=true;
+  }
+  function queue(){const q=[];for(let bank=0;bank<2;bank++)for(let bit=0;bit<4;bit++)if(input[bank][bit])q.push((bank?'B':'A')+bit);return q;}
+  function startRun(){if(!ready||machine.busy||demoOn)return;machine.begin(queue());$('count').textContent='00';}
+  $('run').onclick=startRun;$('reset').onclick=()=>{if(!machine.busy&&!demoOn){machine.begin([],true);$('count').textContent='00';}};
+  function playDemo(){for(let bank=0;bank<2;bank++)for(let bit=0;bit<4;bit++)input[bank][bit]=demos[demoIndex][bank][3-bit]==='1';updateInputs();machine.begin(queue());$('count').textContent='00';}
+  $('demo').onclick=()=>{
+    if(demoOn){demoOn=false;hold=0;$('demo').textContent='DEMO';$('demo').setAttribute('aria-pressed','false');controlsState();if(machine.busy)setStatus('Finishing the current run.');return;}
+    if(machine.busy)return;demoOn=true;demoIndex=0;hold=0;setFollow(true);$('demo').textContent='STOP DEMO';$('demo').setAttribute('aria-pressed','true');playDemo();
+  };
+  const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();let down=null;
+  $('view').addEventListener('pointerdown',e=>{down=[e.clientX,e.clientY];});
+  $('view').addEventListener('pointermove',e=>{if(down&&e.buttons&&Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)setFollow(false);});
+  $('view').addEventListener('wheel',()=>setFollow(false),{passive:true});
+  $('view').addEventListener('pointercancel',()=>{down=null;});
+  $('view').addEventListener('click',e=>{if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;const r=$('view').getBoundingClientRect();pointer.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(targets,false)[0];if(hit)hit.object.userData.action();});
+  function resize(){const rect=$('stage').getBoundingClientRect();renderer.setSize(rect.width,rect.height,false);camera.aspect=rect.width/rect.height;camera.updateProjectionMatrix();fitDistance=Math.max(23.8,14.3/camera.aspect/(2*Math.tan(THREE.MathUtils.degToRad(16.5))));if(!ready||following){camera.position.set(3.1,2.7,fitDistance);controls.target.set(0,-.25,.35);}renderer.shadowMap.needsUpdate=true;}
+  const resizeObserver=new ResizeObserver(resize);resizeObserver.observe($('stage'));resize();updateInputs();ready=true;controlsState();$('demo').disabled=false;$('notice').hidden=true;document.body.dataset.phase='idle';
+  let last=performance.now(),accumulator=0,frameCount=0,frameCost=0,pixelRatio=renderer.getPixelRatio();
+  const focus=new THREE.Vector3(),desired=new THREE.Vector3(),cameraGoal=new THREE.Vector3();
+  document.addEventListener('visibilitychange',()=>{last=performance.now();accumulator=0;});
+  function frame(now){
+    requestAnimationFrame(frame);const elapsed=Math.min((now-last)/1000,.06);last=now;if(document.hidden)return;time+=elapsed;accumulator+=elapsed;
+    while(accumulator>=1/120){machine.step(1/120);accumulator-=1/120;}
+    if(hold>0){hold-=elapsed;if(hold<=0&&demoOn){demoIndex++;if(demoIndex<demos.length)playDemo();else{demoOn=false;$('demo').textContent='REPLAY DEMO';$('demo').setAttribute('aria-pressed','false');controlsState();setStatus('Three additions. Only marbles and toggles.');}}}
+    let moving=machine.busy;
+    for(const view of gateViews)if(view.t<1){view.t=Math.min(1,view.t+elapsed*4.8);const t=view.t,ease=t*t*(3-2*t);view.pivot.rotation.z=view.from+(view.to-view.from)*ease;moving=true;}
+    for(let i=reloads.length-1;i>=0;i--){const r=reloads[i];r.wait-=elapsed;if(r.wait>0)continue;r.v+=3*elapsed;r.mesh.position.y=Math.max(r.y,r.mesh.position.y-r.v*elapsed);if(r.mesh.position.y===r.y)reloads.splice(i,1);moving=true;}
+    for(const s of Object.values(sources))if(s.opened>0){s.opened=Math.max(0,s.opened-elapsed*2);s.lever.position.x=s.position[0]+Math.sin(s.opened*Math.PI)*.46;moving=true;}
+    const angle=machine.busy?-.85:-.20;if(Math.abs(runLever.rotation.z-angle)>.002){runLever.rotation.z+=(angle-runLever.rotation.z)*Math.min(1,elapsed*6);moving=true;}
+    const count=String(machine.fallen).padStart(2,'0');if(count!==lastCounter){const old=counterLabel.material.map;counterLabel.material.map=textTexture(count,'#eee2b7',null,'48px monospace',327,128);old.dispose();lastCounter=count;}
+    if(following){desired.set(machine.active?machine.position[0]*.08:0,machine.active?machine.position[1]*.065:0,0);focus.lerp(desired,1-Math.exp(-elapsed*.85));cameraGoal.set(3.1+Math.sin(time*.095)*.62+focus.x,2.7+focus.y,fitDistance);camera.position.lerp(cameraGoal,1-Math.exp(-elapsed*.75));controls.target.set(focus.x,focus.y-.25,.35);}
+    controls.update();if(moving)renderer.shadowMap.needsUpdate=true;renderer.render(scene,camera);
+    // Bound GPU work on high-density screens; do not change simulation timing.
+    frameCost+=elapsed;frameCount++;if(frameCount===240){$('view').dataset.fps=(frameCount/frameCost).toFixed(1);if(frameCost/frameCount>.018&&pixelRatio>.85){pixelRatio=Math.max(.85,pixelRatio-.2);renderer.setPixelRatio(pixelRatio);}frameCost=0;frameCount=0;}
+  }
+  requestAnimationFrame(frame);
+}
+function changeInput(bank,bit){if(ready)windowChangeInput(bank,bit);}
+</script>
+</body>
+</html>
